@@ -28,7 +28,12 @@
     </style>
 </head>
 <body>
-    <h1>レスポンスデータ</h1>
+    <h1>レスポンスデータ表示</h1>
+    <div class="upload-section">
+        <input type="file" id="csv-file" accept=".csv">
+        <label for="csv-file" class="upload-button">CSVファイルを選択</label>
+    </div>
+    
     <table id="data-table">
         <thead>
             <tr>
@@ -42,24 +47,52 @@
     </table>
 
     <script>
-        // Load CSV data
-        fetch('スレまとめout/cleaned_responses_v2.csv')
-            .then(response => response.text())
-            .then(data => {
-                const rows = data.split('\n').slice(1); // Skip header
-                const tableBody = document.querySelector('#data-table tbody');
+        const fileInput = document.getElementById('csv-file');
+        const tableBody = document.querySelector('#data-table tbody');
 
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = e.target.result;
+                tableBody.innerHTML = ''; // Clear previous data
+                
+                const rows = data.split('\n').slice(1); // Skip header
                 rows.forEach(row => {
                     const [resNo, content] = row.split(',');
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${resNo}</td>
-                        <td>${content}</td>
-                    `;
-                    tableBody.appendChild(tr);
+                    if (resNo && content) {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${resNo}</td>
+                            <td>${content}</td>
+                        `;
+                        tableBody.appendChild(tr);
+                    }
                 });
-            })
-            .catch(error => console.error('Error loading CSV:', error));
+            };
+            reader.readAsText(file);
+        });
     </script>
+
+    <style>
+        .upload-section {
+            margin: 20px 0;
+        }
+        
+        .upload-button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        #csv-file {
+            display: none;
+        }
+    </style>
 </body>
 </html>
