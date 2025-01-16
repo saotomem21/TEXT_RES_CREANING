@@ -25,6 +25,23 @@
         tr:nth-child(even) {
             background-color: #f9f9f9;
         }
+        
+        .upload-section {
+            margin: 20px 0;
+        }
+        
+        .upload-button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        #csv-file {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -51,30 +68,54 @@
         const tableBody = document.querySelector('#data-table tbody');
 
         function loadCSVData(data) {
-            console.log('Raw data:', data);
-            tableBody.innerHTML = ''; // Clear previous data
-            
-            // Normalize line endings and split
-            const rows = data.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-            console.log('Rows:', rows);
-            
-            // Skip header and process each row
-            rows.slice(1).forEach((row, index) => {
-                if (!row.trim()) return; // Skip empty lines
+            console.group('CSV Loading Process');
+            try {
+                console.log('1. Raw input data:', data);
+                tableBody.innerHTML = ''; // Clear previous data
                 
-                console.log(`Processing row ${index}:`, row);
-                const columns = row.split('\t');
-                console.log('Columns:', columns);
+                // Normalize line endings and split
+                const rows = data.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+                console.log('2. Total rows found:', rows.length);
+                console.log('3. First 5 rows preview:', rows.slice(0, 5));
                 
-                if (columns.length >= 2) {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${columns[0].trim()}</td>
-                        <td>${columns.slice(1).join('\t').trim()}</td>
-                    `;
-                    tableBody.appendChild(tr);
+                // Skip header and process each row
+                rows.slice(1).forEach((row, index) => {
+                    if (!row.trim()) {
+                        console.log(`Skipping empty row ${index}`);
+                        return;
+                    }
+                    
+                    console.groupCollapsed(`Processing row ${index}`);
+                    console.log('Raw row content:', row);
+                    const columns = row.split('\t');
+                    console.log('Columns count:', columns.length);
+                    console.log('Columns content:', columns);
+                    
+                    if (columns.length >= 2) {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${columns[0].trim()}</td>
+                            <td>${columns.slice(1).join('\t').trim()}</td>
+                        `;
+                        tableBody.appendChild(tr);
+                        console.log('Row successfully added to table');
+                    } else {
+                        console.warn('Row skipped - insufficient columns');
+                    }
+                    console.groupEnd();
+                });
+                
+                console.log('4. Final table rows count:', tableBody.children.length);
+                if (tableBody.children.length === 0) {
+                    console.warn('No valid rows found in CSV file');
+                    alert('CSVファイルに有効なデータが見つかりませんでした。ファイル形式を確認してください。');
                 }
-            });
+            } catch (error) {
+                console.error('CSV processing error:', error);
+                alert(`CSV処理中にエラーが発生しました: ${error.message}`);
+            } finally {
+                console.groupEnd();
+            }
         }
 
         // Load default CSV file automatically
@@ -107,24 +148,5 @@
             reader.readAsText(file, 'Shift_JIS');
         });
     </script>
-
-    <style>
-        .upload-section {
-            margin: 20px 0;
-        }
-        
-        .upload-button {
-            display: inline-block;
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        
-        #csv-file {
-            display: none;
-        }
-    </style>
 </body>
 </html>
