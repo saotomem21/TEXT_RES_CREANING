@@ -54,12 +54,12 @@
             tableBody.innerHTML = ''; // Clear previous data
             const rows = data.split('\n').slice(1); // Skip header
             rows.forEach(row => {
-                const columns = row.split(',');
+                const columns = row.split('\t');
                 if (columns.length >= 2) {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td>${columns[0]}</td>
-                        <td>${columns.slice(1).join(',')}</td>
+                        <td>${columns[1]}</td>
                     `;
                     tableBody.appendChild(tr);
                 }
