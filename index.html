@@ -61,17 +61,12 @@
                 
                 const rows = data.split('\n').slice(1); // Skip header
                 rows.forEach(row => {
-                    // Use regex to handle commas within quoted content
-                    const columns = row.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g);
-                    if (columns && columns.length >= 2) {
-                        // Remove surrounding quotes if present
-                        const resNo = columns[0].replace(/^"|"$/g, '');
-                        const content = columns.slice(1).join(',').replace(/^"|"$/g, '');
-                        
+                    const columns = row.split(',');
+                    if (columns.length >= 2) {
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
-                            <td>${resNo}</td>
-                            <td>${content}</td>
+                            <td>${columns[0]}</td>
+                            <td>${columns.slice(1).join(',')}</td>
                         `;
                         tableBody.appendChild(tr);
                     }
