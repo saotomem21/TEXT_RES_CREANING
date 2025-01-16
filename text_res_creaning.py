@@ -1,9 +1,9 @@
 import re
 import json
-import time
 import unicodedata
 import pandas as pd
 import logging
+import time
 from typing import Dict, List, Optional, Tuple
 from pathlib import Path
 from tqdm import tqdm
@@ -132,6 +132,9 @@ def clean_text(text: str) -> str:
         text = re.sub(r"[\u3000\u00a0]", " ", text)  # Convert full-width and non-breaking spaces to normal spaces
         text = re.sub(r"\s+", " ", text)  # Collapse multiple spaces
         text = text.replace("\\", "")
+        
+        # Log detailed processing info
+        logger.debug(f"Processed text: {text[:50]}...")
         
         return text.strip()
     except Exception as e:

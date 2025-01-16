@@ -1,5 +1,7 @@
 from flask import Flask, request, render_template, redirect, url_for, send_file
 import os
+import time
+import zipfile
 from text_res_creaning import clean_csv
 from werkzeug.utils import secure_filename
 
@@ -16,31 +18,83 @@ def index():
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    if 'file' not in request.files:
+    if 'files' not in request.files:
         return redirect(url_for('index'))
         
-    file = request.files['file']
-    if file.filename == '':
+    files = request.files.getlist('files')
+    if not files or all(file.filename == '' for file in files):
         return redirect(url_for('index'))
         
-    if file and file.filename.endswith('.csv'):
-        filename = secure_filename(file.filename)
-        input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        output_path = os.path.join(app.config['UPLOAD_FOLDER'], f'cleaned_{filename}')
+    output_mode = request.form.get('output_mode', 'separate')  # separate or combined
+    
+    results = []
+    zip_filename = f'cleaned_files_{int(time.time())}.zip'
+    zip_path = os.path.join(app.config['UPLOAD_FOLDER'], zip_filename)
+    
+    if output_mode == 'combined':
+        # Combine all files into one
+        combined_data = []
+        for file in files:
+            if file and file.filename.endswith('.csv'):
+                filename = secure_filename(file.filename)
+                input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                output_path = os.path.join(app.config['UPLOAD_FOLDER'], f'cleaned_{filename}')
+                
+                # Save uploaded file
+                file.save(input_path)
+                
+                # Process CSV
+                if clean_csv(input_path, output_path):
+                    # Read cleaned data and add to combined list
+                    with open(output_path, 'r', encoding='utf-8') as f:
+                        if not combined_data:
+                            combined_data.append(f.readline())  # Header
+                        combined_data.extend(f.readlines())
         
-        # Save uploaded file
-        file.save(input_path)
-        
-        # Process CSV and get cleaned data
-        if clean_csv(input_path, output_path):
-            # Read cleaned data for display
-            with open(output_path, 'r', encoding='utf-8') as f:
-                cleaned_data = f.read()
+        # Save combined file
+        if combined_data:
+            combined_output_path = os.path.join(app.config['UPLOAD_FOLDER'], 'combined_output.csv')
+            with open(combined_output_path, 'w', encoding='utf-8') as f:
+                f.writelines(combined_data)
             
-            return render_template('index.html', 
-                                 original_filename=filename,
-                                 cleaned_data=cleaned_data,
-                                 download_link=url_for('download', filename=f'cleaned_{filename}'))
+            results.append({
+                'filename': 'combined_output.csv',
+                'data': ''.join(combined_data)
+            })
+            
+            # Add to zip
+            with zipfile.ZipFile(zip_path, 'w') as zipf:
+                zipf.write(combined_output_path, 'combined_output.csv')
+    else:
+        # Process files separately
+        with zipfile.ZipFile(zip_path, 'w') as zipf:
+            for file in files:
+                if file and file.filename.endswith('.csv'):
+                    filename = secure_filename(file.filename)
+                    input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    output_path = os.path.join(app.config['UPLOAD_FOLDER'], f'cleaned_{filename}')
+                
+                # Save uploaded file
+                file.save(input_path)
+                
+                # Process CSV and get cleaned data
+                if clean_csv(input_path, output_path):
+                    # Read cleaned data for display
+                    with open(output_path, 'r', encoding='utf-8') as f:
+                        cleaned_data = f.read()
+                    
+                    results.append({
+                        'filename': filename,
+                        'data': cleaned_data
+                    })
+                    
+                    # Add cleaned file to zip archive
+                    zipf.write(output_path, f'cleaned_{filename}')
+    
+    if results:
+        return render_template('index.html', 
+                            results=results,
+                            download_link=url_for('download', filename=zip_filename))
             
     return redirect(url_for('index'))
 
@@ -80,4 +134,4 @@ if __name__ == '__main__':
     if args.build_static:
         build_static_site()
     else:
-        app.run(host='0.0.0.0', port=5001, debug=True)
+        app.run(host='0.0.0.0', port=5002, debug=True)

@@ -20,21 +20,45 @@
                 
                 <form action="/upload" method="post" enctype="multipart/form-data">
                     <div class="mb-3">
-                        <input class="form-control" type="file" name="file" accept=".csv" required>
+                        <input class="form-control" type="file" name="files" accept=".csv" multiple required>
                     </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">出力方法を選択:</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="output_mode" id="output_separate" value="separate" checked>
+                            <label class="form-check-label" for="output_separate">
+                                各ファイルを個別に出力
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="output_mode" id="output_combined" value="combined">
+                            <label class="form-check-label" for="output_combined">
+                                すべてのファイルを1つに結合して出力
+                            </label>
+                        </div>
+                    </div>
+                    
                     <button type="submit" class="btn btn-primary">アップロードして処理</button>
                 </form>
             </div>
         </div>
         
-        {% if cleaned_data %}
+        {% if results %}
         <div class="mt-4">
             <h5>クリーニング結果</h5>
-            <div class="card">
-                <div class="card-body">
-                    <pre style="max-height: 400px; overflow: auto;">{{ cleaned_data }}</pre>
-                    <a href="{{ download_link }}" class="btn btn-success mt-3">クリーニング結果をダウンロード</a>
+            {% for result in results %}
+            <div class="card mb-3">
+                <div class="card-header">
+                    {{ result.filename }}
                 </div>
+                <div class="card-body">
+                    <pre style="max-height: 200px; overflow: auto;">{{ result.data }}</pre>
+                </div>
+            </div>
+            {% endfor %}
+            <div class="text-center mt-3">
+                <a href="{{ download_link }}" class="btn btn-success">すべての結果をダウンロード</a>
             </div>
         </div>
         {% endif %}
