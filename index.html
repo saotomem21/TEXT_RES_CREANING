@@ -75,13 +75,25 @@
         // Handle file selection
         fileInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
-            if (!file) return;
+            if (!file) {
+                alert('ファイルが選択されていません');
+                return;
+            }
 
             const reader = new FileReader();
             reader.onload = function(e) {
-                loadCSVData(e.target.result);
+                try {
+                    loadCSVData(e.target.result);
+                } catch (error) {
+                    console.error('ファイル読み込みエラー:', error);
+                    alert('ファイルの読み込みに失敗しました');
+                }
             };
-            reader.readAsText(file);
+            reader.onerror = function(error) {
+                console.error('ファイル読み込みエラー:', error);
+                alert('ファイルの読み込みに失敗しました');
+            };
+            reader.readAsText(file, 'Shift_JIS');
         });
     </script>
 
