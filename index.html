@@ -29,6 +29,10 @@
 </head>
 <body>
     <h1>レスポンスデータ表示</h1>
+    <div class="upload-section">
+        <input type="file" id="csv-file" accept=".csv">
+        <label for="csv-file" class="upload-button">CSVファイルを選択</label>
+    </div>
     
     <table id="data-table">
         <thead>
@@ -46,26 +50,39 @@
         const fileInput = document.getElementById('csv-file');
         const tableBody = document.querySelector('#data-table tbody');
 
-        // Load specific CSV file automatically
+        function loadCSVData(data) {
+            tableBody.innerHTML = ''; // Clear previous data
+            const rows = data.split('\n').slice(1); // Skip header
+            rows.forEach(row => {
+                const columns = row.split(',');
+                if (columns.length >= 2) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${columns[0]}</td>
+                        <td>${columns.slice(1).join(',')}</td>
+                    `;
+                    tableBody.appendChild(tr);
+                }
+            });
+        }
+
+        // Load default CSV file automatically
         fetch('スレまとめ/responses (2).csv')
             .then(response => response.text())
-            .then(data => {
-                tableBody.innerHTML = ''; // Clear previous data
-                
-                const rows = data.split('\n').slice(1); // Skip header
-                rows.forEach(row => {
-                    const columns = row.split(',');
-                    if (columns.length >= 2) {
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td>${columns[0]}</td>
-                            <td>${columns.slice(1).join(',')}</td>
-                        `;
-                        tableBody.appendChild(tr);
-                    }
-                });
-            })
-            .catch(error => console.error('Error loading CSV:', error));
+            .then(data => loadCSVData(data))
+            .catch(error => console.error('Error loading default CSV:', error));
+
+        // Handle file selection
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                loadCSVData(e.target.result);
+            };
+            reader.readAsText(file);
+        });
     </script>
 
     <style>
